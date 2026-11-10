@@ -1,0 +1,16 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: churnguard-api
+    ports:
+      - "8000:8000"
+    environment:
+      CHURNGUARD_ONNX_PATH: /app/models/churn_xgb.onnx
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
