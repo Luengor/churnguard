@@ -6,6 +6,8 @@ dependencies = [
     "evidently>=0.7.23",
     "fastapi>=0.162.2",
     "mlflow>=3.18.0",
+    "onnx>=1.23.2",
+    "onnxmltools>=1.16.0",
     "onnxruntime>=1.31.1",
     "openpyxl>=3.1.5",
     "prometheus-client>=0.26.0",
@@ -27,3 +29,6 @@ dev = [
     "pytest>=9.2.0",
     "ruff>=0.17.4",
 ]
+
+[tool.uv.sources]
+onnxmltools = { git = "https://github.com/onnx/onnxmltools.git" }
