@@ -1,6 +1,5 @@
 import os
 import time
-from pathlib import Path
 from typing import Any, Literal
 
 import numpy as np
@@ -10,11 +9,8 @@ from fastapi import FastAPI, Request, Response
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
-from train import DROP_COLS, TARGET, load_data, prepare_features
-
-REPO = Path(__file__).resolve().parent.parent
-ONNX_PATH = Path(os.getenv("CHURNGUARD_ONNX_PATH", str(REPO / "models" / "churn_xgb.onnx")))
-INPUT_NAME = "float_input"
+from common import DROP_COLS, INPUT_NAME, ONNX_PATH, TARGET
+from train import load_data, prepare_features
 
 df = load_data()
 raw = df.drop(columns=DROP_COLS + [TARGET])
@@ -36,11 +32,11 @@ def _field_type(col: str) -> Any:
     return float
 
 
-fields: dict[str, tuple[Any, Any]] = {
+fields: dict[str, Any] = {
     _field_name(c): (_field_type(c), Field(alias=c)) for c in raw.columns
 }
 
-CustomerInput = create_model(
+CustomerInput: type[BaseModel] = create_model(
     "CustomerInput",
     __config__=ConfigDict(validate_by_name=True, validate_by_alias=True),
     **fields,
@@ -63,11 +59,14 @@ REQUEST_LATENCY = Histogram(
     ["method", "endpoint"],
 )
 
-session = ort.InferenceSession(str(ONNX_PATH), providers=["CPUExecutionProvider"])
+session = ort.InferenceSession(
+    str(os.getenv("CHURNGUARD_ONNX_PATH", ONNX_PATH)),
+    providers=["CPUExecutionProvider"],
+)
 app = FastAPI(title="ChurnGuard")
 
 
-def to_feature_vector(customer: CustomerInput) -> np.ndarray:
+def to_feature_vector(customer: BaseModel) -> np.ndarray:
     frame = pd.DataFrame([customer.model_dump(by_alias=True)])
     for col in CATEGORICAL_COLUMNS:
         frame[col] = pd.Categorical(frame[col], categories=CATEGORIES[col])
@@ -98,7 +97,7 @@ def metrics():
 
 
 @app.post("/predict", response_model=PredictionResponse)
-def predict(customer: CustomerInput):
+def predict(customer: CustomerInput):  # type: ignore[valid-type]  # FastAPI needs the runtime model for the body schema
     features = to_feature_vector(customer)
     probabilities, label = session.run(
         ["probabilities", "label"], {INPUT_NAME: features}

@@ -8,3 +8,6 @@ __pycache__
 mlflow.db
 mlruns
 notebooks
+data/reference.csv
+data/current.csv
+monitoring/evidently

@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import mlflow
 import numpy as np
 import onnx
@@ -12,30 +10,21 @@ from onnxmltools.convert.common.data_types import FloatTensorType
 from sklearn.metrics import f1_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 
-REPO = Path(__file__).resolve().parent.parent
+from common import (
+    CURRENT_PATH,
+    DROP_COLS,
+    INPUT_NAME,
+    MODEL_PATH,
+    ONNX_PATH,
+    RANDOM_STATE,
+    REFERENCE_PATH,
+    REPO,
+    TARGET,
+)
+
 DATA_PATH = REPO / "data" / "Telco_customer_churn.xlsx"
-MODEL_PATH = REPO / "models" / "churn_xgb.json"
-ONNX_PATH = REPO / "models" / "churn_xgb.onnx"
 
-DROP_COLS = [
-    "CustomerID",
-    "Count",
-    "Country",
-    "State",
-    "City",
-    "Zip Code",
-    "Lat Long",
-    "Latitude",
-    "Longitude",
-    "Churn Label",
-    "Churn Score",
-    "CLTV",
-    "Churn Reason",
-]
-
-TARGET = "Churn Value"
 TEST_SIZE = 0.2
-RANDOM_STATE = 42
 MLFLOW_TRACKING_URI = f"sqlite:///{REPO / 'mlflow.db'}"
 
 
@@ -63,13 +52,13 @@ def export_onnx(model: xgb.Booster, X: pd.DataFrame) -> None:
 
     onnx_model = convert_xgboost(
         booster,
-        initial_types=[("float_input", FloatTensorType([None, X.shape[1]]))],
+        initial_types=[(INPUT_NAME, FloatTensorType([None, X.shape[1]]))],
     )
     onnx.save_model(onnx_model, str(ONNX_PATH))
 
     sample = X.iloc[:5].to_numpy(dtype=np.float32)
     session = ort.InferenceSession(str(ONNX_PATH), providers=["CPUExecutionProvider"])
-    onnx_proba = session.run(None, {"float_input": sample})[1][:, 1]
+    onnx_proba = session.run(None, {INPUT_NAME: sample})[1][:, 1]
     native_proba = model.predict(xgb.DMatrix(sample, feature_names=model.feature_names))
     max_diff = float(np.max(np.abs(onnx_proba - native_proba)))
     print(f"ONNX max probability diff vs native: {max_diff:.2e}")
@@ -80,9 +69,16 @@ def main() -> None:
     df = load_data()
     X, y = prepare_features(df)
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=TEST_SIZE, stratify=y, random_state=RANDOM_STATE
+    idx_train, idx_test = train_test_split(
+        df.index, test_size=TEST_SIZE, stratify=y, random_state=RANDOM_STATE
     )
+    X_train, X_test = X.loc[idx_train], X.loc[idx_test]
+    y_train, y_test = y.loc[idx_train], y.loc[idx_test]
+
+    # Test split doubles as the "current" batch; train split is the drift reference.
+    raw = df.drop(columns=DROP_COLS)
+    raw.loc[idx_train].to_csv(REFERENCE_PATH, index=False)
+    raw.loc[idx_test].to_csv(CURRENT_PATH, index=False)
 
     d_train = xgb.DMatrix(X_train, label=y_train)
     d_test = xgb.DMatrix(X_test, label=y_test)

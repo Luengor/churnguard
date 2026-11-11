@@ -1,4 +1,7 @@
 /mlflow.db
 /mlruns
 /models
+/data/reference.csv
+/data/current.csv
+/monitoring/evidently
 __pycache__
