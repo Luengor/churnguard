@@ -1,6 +1,7 @@
 /mlflow.db
 /mlruns
-/models
+/models/*
+!/models/churn_xgb.onnx
 /data/reference.csv
 /data/current.csv
 /monitoring/evidently
