@@ -8,12 +8,24 @@ services:
       - "8000:8000"
     environment:
       CHURNGUARD_ONNX_PATH: /app/models/churn_xgb.onnx
+      CHURNGUARD_XGB_PATH: /app/models/churn_xgb.json
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  ui:
+    image: churnguard-api
+    command: ["streamlit", "run", "ui.py", "--server.address", "0.0.0.0", "--server.port", "8501"]
+    working_dir: /app/src
+    ports:
+      - "8501:8501"
+    environment:
+      CHURNGUARD_API_URL: http://api:8000
+    depends_on:
+      - api
 
   prometheus:
     image: prom/prometheus:latest

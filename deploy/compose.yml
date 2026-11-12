@@ -4,6 +4,7 @@ services:
     env_file: ../.env
     environment:
       CHURNGUARD_ONNX_PATH: /app/models/churn_xgb.onnx
+      CHURNGUARD_XGB_PATH: /app/models/churn_xgb.json
     ports:
       - "${API_BIND:-127.0.0.1}:${API_HOST_PORT:-8000}:8000"
     healthcheck:
@@ -12,6 +13,17 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  ui:
+    image: ${REGISTRY:-ghcr.io}/${REPO_OWNER}/churnguard-api:${IMAGE_TAG:-latest}
+    command: ["streamlit", "run", "ui.py", "--server.address", "0.0.0.0", "--server.port", "8501"]
+    working_dir: /app/src
+    environment:
+      CHURNGUARD_API_URL: http://api:8000
+    ports:
+      - "${UI_BIND:-127.0.0.1}:${UI_HOST_PORT:-8501}:8501"
+    depends_on:
+      - api
 
   prometheus:
     image: prom/prometheus:latest
