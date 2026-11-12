@@ -2,6 +2,7 @@
 /mlruns
 /models/*
 !/models/churn_xgb.onnx
+!/models/churn_xgb.json
 /data/reference.csv
 /data/current.csv
 /monitoring/evidently
