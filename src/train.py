@@ -19,27 +19,12 @@ from common import (
     RANDOM_STATE,
     REFERENCE_PATH,
     REPO,
-    TARGET,
+    load_data,
+    prepare_features,
 )
-
-DATA_PATH = REPO / "data" / "Telco_customer_churn.xlsx"
 
 TEST_SIZE = 0.2
 MLFLOW_TRACKING_URI = f"sqlite:///{REPO / 'mlflow.db'}"
-
-
-def load_data() -> pd.DataFrame:
-    df = pd.read_excel(DATA_PATH)
-    df["Total Charges"] = pd.to_numeric(df["Total Charges"], errors="coerce")
-    df["Senior Citizen"] = df["Senior Citizen"].map({"Yes": 1, "No": 0})
-    return df
-
-
-def prepare_features(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
-    y = df[TARGET]
-    X = df.drop(columns=DROP_COLS + [TARGET])
-    X = pd.get_dummies(X, drop_first=True).astype("float32")
-    return X, y
 
 
 def export_onnx(model: xgb.Booster, X: pd.DataFrame) -> None:
