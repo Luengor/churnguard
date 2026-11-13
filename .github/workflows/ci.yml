@@ -94,5 +94,5 @@ jobs:
             cd "${{ secrets.VPS_REPO_DIR }}"
             git pull --ff-only origin main
             cp -n .env.example .env 2>/dev/null || true
-            docker compose -f deploy/compose.yml pull
-            docker compose -f deploy/compose.yml up -d --remove-orphans
+            docker compose -p churnguard -f deploy/compose.yml pull
+            docker compose -p churnguard -f deploy/compose.yml up -d --remove-orphans

@@ -1,3 +1,5 @@
+name: churnguard
+
 services:
   api:
     image: ${REGISTRY:-ghcr.io}/${REPO_OWNER}/churnguard-api:${IMAGE_TAG:-latest}
