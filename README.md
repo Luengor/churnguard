@@ -2,7 +2,7 @@
 
 [![ci](https://github.com/Luengor/churnguard/actions/workflows/ci.yml/badge.svg)](https://github.com/Luengor/churnguard/actions/workflows/ci.yml)
 
-End-to-end MLOps pipeline for **customer churn**: train → track → serve → monitor → detect drift → explain, shipped with Docker and CI/CD.
+End-to-end MLOps pipeline for **customer churn**: train → track → serve → monitor → detect drift → explain, shipped with Docker and CI/CD. Live demo at [https://churn.soymilk.lueng.org](https://churn.soymilk.lueng.org).
 
 
 ## Features
